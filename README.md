@@ -9,3 +9,8 @@ Esse E Um Editor que Usamos para criar o mapa do parque
 # Index.html
 
 O Loader Do Parque
+
+
+# Jacareí v2 Changes
+
+Added TAS Tools
