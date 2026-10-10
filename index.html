@@ -50,6 +50,33 @@
       <div class="stage-footer"><span>PARQUE DA CIDADE · MAPA 2D</span><span id="tile-count">0 blocos</span></div>
     </section>
 
+    <section class="tas-panel" aria-label="Ferramentas TAS">
+      <div class="tas-heading">
+        <div><p class="eyebrow">FERRAMENTAS TAS</p><span class="tas-subtitle">Grave e reproduza movimentos frame a frame.</span></div>
+        <span id="tas-frame" class="frame-counter">FRAME 000000</span>
+      </div>
+      <div class="tas-controls">
+        <div class="tas-group">
+          <button id="save-state" class="button button-muted" type="button">Salvar estado</button>
+          <button id="load-state" class="button button-muted" type="button">Carregar estado</button>
+          <button id="frame-advance" class="button button-outline" type="button"><span aria-hidden="true">▸</span> Avançar frame</button>
+        </div>
+        <div class="tas-group">
+          <button id="slow-down" class="button button-outline" type="button" title="Diminuir velocidade"><span aria-hidden="true">−</span> Slow Down</button>
+          <span id="tas-speed" class="speed-indicator">1×</span>
+          <button id="fast-forward" class="button button-outline" type="button" title="Aumentar velocidade"><span aria-hidden="true">＋</span> Fast Forward</button>
+        </div>
+        <div class="tas-group tas-replay-group">
+          <button id="record-tap" class="button button-record" type="button"><span class="record-dot" aria-hidden="true"></span> Gravar .tap</button>
+          <button id="replay-tap" class="button button-muted" type="button"><span aria-hidden="true">↻</span> Replay</button>
+          <button id="export-tap" class="button button-muted" type="button" disabled>Exportar .tap</button>
+          <label class="button button-outline file-button" for="tap-file">Carregar .tap</label>
+          <input id="tap-file" class="visually-hidden" type="file" accept=".tap,application/json">
+        </div>
+      </div>
+      <p id="tas-status" class="tas-status" role="status">Carregue um mapa com visitante para começar.</p>
+    </section>
+
     <footer class="loader-footer"><span>Um lugar para criar, explorar e imaginar.</span><span>MAPAS LOCAIS · JSON</span></footer>
   </main>
 </body>

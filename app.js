@@ -1,5 +1,6 @@
 (() => {
   const STORAGE_KEY = 'parque-da-cidade-map-v1';
+  const TAS_STATE_KEY = 'parque-da-cidade-tas-state-v1';
   const TILE_SIZE = 32;
   const MATERIALS = {
     grass: { color: '#74a957', detail: '#8dbd66' },
@@ -143,16 +144,118 @@
     const name = document.querySelector('#map-name');
     const size = document.querySelector('#map-size');
     const count = document.querySelector('#tile-count');
+    const tasStatus = document.querySelector('#tas-status');
+    const frameLabel = document.querySelector('#tas-frame');
+    const speedLabel = document.querySelector('#tas-speed');
     let map = null;
+    let frame = 0;
+    let playbackRate = 1;
+    let recording = null;
+    let lastTap = null;
+    let playbackTimer = null;
+    let playbackFrame = 0;
+    let playbackTotalFrames = 0;
+
+    const clone = value => JSON.parse(JSON.stringify(value));
+    const updateFrameLabel = () => { frameLabel.textContent = `FRAME ${String(frame).padStart(6, '0')}`; };
+    const stopPlayback = () => {
+      if (playbackTimer !== null) window.clearInterval(playbackTimer);
+      playbackTimer = null;
+      document.querySelector('#replay-tap').textContent = '↻ Replay';
+    };
+
+    const schedulePlayback = () => {
+      if (playbackTimer !== null) window.clearInterval(playbackTimer);
+      playbackTimer = window.setInterval(() => {
+        playbackFrame += 1;
+        const directionsForFrame = lastTap.inputs.filter(input => input.frame === playbackFrame);
+        if (directionsForFrame.length) directionsForFrame.forEach(input => advanceFrame(input.direction, true));
+        else advanceFrame(null, true);
+        if (playbackFrame >= playbackTotalFrames) {
+          stopPlayback();
+          tasStatus.textContent = `Replay concluído em ${frame} frames.`;
+        }
+      }, Math.max(1, 1000 / (60 * playbackRate)));
+    };
+
+    const moveVisitor = direction => {
+      if (!map || !map.visitors.length) return false;
+      const deltas = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+      const [deltaX, deltaY] = deltas[direction];
+      const visitor = map.visitors[0];
+      const nextX = visitor.x + deltaX;
+      const nextY = visitor.y + deltaY;
+      if (nextX < 0 || nextY < 0 || nextX >= map.width || nextY >= map.height) return false;
+      visitor.x = nextX;
+      visitor.y = nextY;
+      return true;
+    };
+
+    const advanceFrame = (direction = null, replaying = false) => {
+      if (!map) {
+        tasStatus.textContent = 'Carregue um mapa antes de avançar frames.';
+        return;
+      }
+      frame += 1;
+      if (direction) {
+        moveVisitor(direction);
+        if (recording && !replaying) recording.inputs.push({ frame, direction });
+      }
+      paintMap(canvas.getContext('2d'), map);
+      count.textContent = describeMapContents(map);
+      updateFrameLabel();
+      if (!replaying) {
+        status.textContent = direction && map.visitors.length
+          ? `Visitante em ${map.visitors[0].x + 1}, ${map.visitors[0].y + 1}.`
+          : `${map.name} · frame ${frame}.`;
+        if (direction) {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); } catch { /* State can still be exported as a TAS file. */ }
+        }
+      }
+    };
+
+    const validateTap = value => {
+      if (!value || value.format !== 'parque-da-cidade-tas' || value.version !== 1 ||
+          !Array.isArray(value.inputs) || value.inputs.some(input =>
+            !Number.isInteger(input.frame) || input.frame < 1 ||
+            !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(input.direction))) {
+        throw new Error('O arquivo .tap não é um replay válido deste simulador.');
+      }
+      const baseMap = validateMap(value.map);
+      const inputs = value.inputs.slice().sort((a, b) => a.frame - b.frame);
+      const totalFrames = Number.isInteger(value.totalFrames) && value.totalFrames >= 0
+        ? value.totalFrames
+        : inputs.at(-1)?.frame || 0;
+      if (inputs.some(input => input.frame > totalFrames)) throw new Error('O arquivo .tap possui frames inválidos.');
+      return { format: value.format, version: 1, map: baseMap, totalFrames, inputs };
+    };
+
+    const downloadTap = tap => {
+      const blob = new Blob([JSON.stringify(tap, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${tap.map.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'replay'}.tap`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    };
+
+    const updateExportButton = () => { document.querySelector('#export-tap').disabled = !lastTap; };
 
     const showMap = loaded => {
+      stopPlayback();
       map = loaded;
+      frame = 0;
+      updateFrameLabel();
       paintMap(canvas.getContext('2d'), map);
       viewport.classList.add('has-map');
       name.textContent = map.name.toUpperCase();
       size.textContent = `${map.width} × ${map.height}`;
       count.textContent = describeMapContents(map);
       status.textContent = 'Mapa carregado para visualização.';
+      tasStatus.textContent = map.visitors.length
+        ? 'Pronto para gravar movimentos do visitante.'
+        : 'Adicione um visitante no editor para gravar movimentos.';
     };
 
     try {
@@ -167,28 +270,126 @@
       if (map) status.textContent = `${map.name} · ${map.width} × ${map.height}`;
     });
     document.addEventListener('keydown', event => {
-      if (!map || !map.visitors.length || event.target.matches('input, textarea, select, [contenteditable="true"]')) return;
+      if (!map || !map.visitors.length ||
+          (event.target instanceof Element && event.target.matches('input, textarea, select, [contenteditable="true"]'))) return;
       const directions = {
-        ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
-        w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0],
+        ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight',
+        w: 'ArrowUp', s: 'ArrowDown', a: 'ArrowLeft', d: 'ArrowRight',
       };
       const direction = directions[event.key] || directions[event.key.toLowerCase()];
       if (!direction) return;
       event.preventDefault();
-      const visitor = map.visitors[0];
-      const nextX = visitor.x + direction[0];
-      const nextY = visitor.y + direction[1];
-      if (nextX < 0 || nextY < 0 || nextX >= map.width || nextY >= map.height) return;
-      visitor.x = nextX;
-      visitor.y = nextY;
-      paintMap(canvas.getContext('2d'), map);
-      count.textContent = describeMapContents(map);
-      status.textContent = `Visitante em ${nextX + 1}, ${nextY + 1}.`;
+      if (playbackTimer !== null) return;
+      advanceFrame(direction);
+    });
+
+    document.querySelector('#save-state').addEventListener('click', () => {
+      if (!map) { tasStatus.textContent = 'Carregue um mapa antes de salvar o estado.'; return; }
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+        localStorage.setItem(TAS_STATE_KEY, JSON.stringify({ map, frame }));
+        tasStatus.textContent = `Estado salvo no frame ${frame}.`;
       } catch {
-        status.textContent = `Visitante em ${nextX + 1}, ${nextY + 1}. Posição não salva.`;
+        tasStatus.textContent = 'Não foi possível salvar o estado neste navegador.';
       }
+    });
+    document.querySelector('#load-state').addEventListener('click', () => {
+      try {
+        const saved = localStorage.getItem(TAS_STATE_KEY);
+        if (!saved) { tasStatus.textContent = 'Nenhum Save State encontrado neste navegador.'; return; }
+        const state = JSON.parse(saved);
+        if (!Number.isInteger(state.frame) || state.frame < 0) throw new Error('Save State inválido.');
+        showMap(validateMap(state.map));
+        frame = state.frame;
+        updateFrameLabel();
+        tasStatus.textContent = `Estado carregado no frame ${frame}.`;
+      } catch (error) {
+        tasStatus.textContent = error.message || 'Não foi possível carregar o estado.';
+      }
+    });
+    document.querySelector('#frame-advance').addEventListener('click', () => advanceFrame());
+    document.querySelector('#slow-down').addEventListener('click', () => {
+      playbackRate = Math.max(.25, playbackRate / 2);
+      speedLabel.textContent = `${playbackRate}×`;
+      if (playbackTimer !== null) schedulePlayback();
+      tasStatus.textContent = `Velocidade: ${playbackRate}×.`;
+    });
+    document.querySelector('#fast-forward').addEventListener('click', () => {
+      playbackRate = Math.min(8, playbackRate * 2);
+      speedLabel.textContent = `${playbackRate}×`;
+      if (playbackTimer !== null) schedulePlayback();
+      tasStatus.textContent = `Velocidade: ${playbackRate}×.`;
+    });
+    document.querySelector('#record-tap').addEventListener('click', event => {
+      if (!map) { tasStatus.textContent = 'Carregue um mapa antes de gravar.'; return; }
+      if (!map.visitors.length) { tasStatus.textContent = 'Adicione um visitante no editor antes de gravar.'; return; }
+      if (recording) {
+        lastTap = {
+          format: 'parque-da-cidade-tas', version: 1, map: recording.map,
+          totalFrames: frame, inputs: recording.inputs,
+        };
+        recording = null;
+        event.currentTarget.classList.remove('is-recording');
+        event.currentTarget.innerHTML = '<span class="record-dot" aria-hidden="true"></span> Gravar .tap';
+        updateExportButton();
+        tasStatus.textContent = `Gravação concluída: ${lastTap.inputs.length} entradas.`;
+        return;
+      }
+      stopPlayback();
+      recording = { map: clone(map), inputs: [] };
+      frame = 0;
+      updateFrameLabel();
+      event.currentTarget.classList.add('is-recording');
+      event.currentTarget.innerHTML = '<span class="record-dot" aria-hidden="true"></span> Parar gravação';
+      lastTap = null;
+      updateExportButton();
+      tasStatus.textContent = 'Gravando. Use setas ou WASD para registrar os movimentos.';
+    });
+    document.querySelector('#export-tap').addEventListener('click', () => {
+      if (lastTap) downloadTap(lastTap);
+    });
+    document.querySelector('#tap-file').addEventListener('change', event => {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          lastTap = validateTap(JSON.parse(reader.result));
+          updateExportButton();
+          tasStatus.textContent = `Replay carregado: ${lastTap.inputs.length} entradas. Pressione Replay.`;
+        } catch (error) {
+          tasStatus.textContent = error.message || 'Não foi possível ler o arquivo .tap.';
+        }
+      };
+      reader.onerror = () => { tasStatus.textContent = 'Não foi possível abrir esse arquivo .tap.'; };
+      reader.readAsText(file);
+    });
+
+    function startPlayback() {
+      stopPlayback();
+      if (!lastTap) { tasStatus.textContent = 'Carregue ou grave um arquivo .tap primeiro.'; return; }
+      if (recording) {
+        recording = null;
+        const recordButton = document.querySelector('#record-tap');
+        recordButton.classList.remove('is-recording');
+        recordButton.innerHTML = '<span class="record-dot" aria-hidden="true"></span> Gravar .tap';
+      }
+      showMap(clone(lastTap.map));
+      frame = 0;
+      playbackFrame = 0;
+      updateFrameLabel();
+      const lastInputFrame = lastTap.inputs.at(-1)?.frame || 0;
+      playbackTotalFrames = Math.max(lastTap.totalFrames || 0, lastInputFrame, 1);
+      document.querySelector('#replay-tap').textContent = 'Ⅱ Pausar';
+      tasStatus.textContent = `Reproduzindo .tap a ${playbackRate}×.`;
+      schedulePlayback();
+    }
+
+    document.querySelector('#replay-tap').addEventListener('click', () => {
+      if (playbackTimer !== null) {
+        stopPlayback();
+        tasStatus.textContent = `Replay pausado no frame ${frame}.`;
+      } else startPlayback();
     });
   }
 

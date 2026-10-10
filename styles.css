@@ -65,6 +65,23 @@ button { color: inherit; }
 .empty-state > span:last-child { max-width: 280px; font-size: 12px; line-height: 1.6; }
 .has-map .empty-state { display: none; }
 .stage-footer { background: #c7d4b9; }
+.tas-panel { margin-top: 16px; padding: 16px 18px 11px; border: 1px solid var(--line); background: #172e27; }
+.tas-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.tas-heading .eyebrow { margin-bottom: 5px; }
+.tas-subtitle { color: #aab9ae; font-size: 11px; }
+.frame-counter { color: var(--lime); font: 10px 'DM Mono', monospace; white-space: nowrap; }
+.tas-controls { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 9px; margin-top: 14px; }
+.tas-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tas-controls .button { min-height: 34px; padding: 0 10px; font-size: 10px; }
+.button-record { color: #ffe8de; border-color: rgba(228, 119, 92, .42); background: rgba(228, 119, 92, .12); }
+.button-record:hover { background: rgba(228, 119, 92, .22); }
+.button-record.is-recording { color: #fff; background: #a94b3c; }
+.record-dot { width: 8px; height: 8px; border-radius: 50%; background: #e87961; }
+.is-recording .record-dot { animation: record-pulse 1s infinite; background: #fff; }
+@keyframes record-pulse { 50% { opacity: .3; } }
+.speed-indicator { min-width: 28px; color: var(--lime); font: 10px 'DM Mono', monospace; text-align: center; }
+.tas-controls button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.tas-status { min-height: 14px; margin: 10px 0 0; color: #8fa195; font: 9px 'DM Mono', monospace; }
 .loader-footer { display: flex; justify-content: space-between; padding-top: 20px; color: #829288; font: 9px 'DM Mono', monospace; letter-spacing: .6px; }
 
 /* Editor */
@@ -124,6 +141,11 @@ button { color: inherit; }
   .loader-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .loader-actions .status { grid-column: 1 / -1; text-align: left; }
   .map-stage { min-height: 360px; }
+  .tas-panel { padding: 13px 12px 8px; }
+  .tas-controls { justify-content: flex-start; }
+  .tas-group { width: 100%; }
+  .tas-controls .button { flex: 1 1 auto; padding: 0 7px; font-size: 9px; }
+  .tas-replay-group .file-button { flex: 1 1 auto; }
   .loader-footer { gap: 12px; font-size: 8px; }
   .editor-topbar { padding: 0 13px; }
   .editor-topbar .brand { gap: 8px; }
