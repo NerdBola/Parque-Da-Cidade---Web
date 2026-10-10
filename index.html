@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173b31">
+  <title>Parque da Cidade | Mapa</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body data-page="loader">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Parque da Cidade, início">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span><strong>PARQUE DA CIDADE</strong><small>SIMULADOR 2D</small></span>
+    </a>
+    <nav class="top-actions" aria-label="Navegação principal">
+      <a class="button button-primary" href="map-editor.html"><span aria-hidden="true">＋</span> Abrir editor</a>
+    </nav>
+  </header>
+
+  <main class="loader-layout">
+    <section class="loader-heading">
+      <div>
+        <p class="eyebrow">CENTRAL DE MAPAS</p>
+        <h1>Seu parque,<br><em>do seu jeito.</em></h1>
+        <p class="intro">Carregue um mapa salvo ou escolha um arquivo para explorar o terreno.</p>
+      </div>
+      <div class="loader-actions">
+        <label class="button button-primary file-button" for="map-file"><span aria-hidden="true">↥</span> Carregar mapa</label>
+        <input id="map-file" class="visually-hidden" type="file" accept=".json,application/json">
+        <a class="button button-outline" href="map-editor.html">Criar mapa <span aria-hidden="true">↗</span></a>
+        <p id="loader-status" class="status" role="status">Nenhum mapa carregado ainda.</p>
+      </div>
+    </section>
+
+    <section class="map-stage" aria-label="Visualização do mapa">
+      <div class="stage-topline">
+        <div><span class="live-dot"></span><span id="map-name">PRÉ-VISUALIZAÇÃO</span></div>
+        <span id="map-size">AGUARDANDO MAPA</span>
+      </div>
+      <div class="map-viewport">
+        <canvas id="map-canvas" aria-label="Mapa carregado"></canvas>
+        <div id="empty-state" class="empty-state">
+          <span class="empty-icon" aria-hidden="true">⌗</span>
+          <strong>O terreno está à sua espera</strong>
+          <span>Carregue um arquivo JSON ou abra o editor para começar.</span>
+        </div>
+      </div>
+      <div class="stage-footer"><span>PARQUE DA CIDADE · MAPA 2D</span><span id="tile-count">0 blocos</span></div>
+    </section>
+
+    <footer class="loader-footer"><span>Um lugar para criar, explorar e imaginar.</span><span>MAPAS LOCAIS · JSON</span></footer>
+  </main>
+</body>
+</html>

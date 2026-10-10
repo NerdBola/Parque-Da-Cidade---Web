@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173b31">
+  <title>Editor de mapas | Parque da Cidade</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body data-page="editor">
+  <header class="topbar editor-topbar">
+    <a class="brand" href="index.html" aria-label="Voltar ao loader">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span><strong>PARQUE DA CIDADE</strong><small>EDITOR DE MAPAS</small></span>
+    </a>
+    <div class="editor-actions">
+      <label class="icon-button import-button" for="map-file" title="Importar mapa" aria-label="Importar mapa">↥</label>
+      <input id="map-file" class="visually-hidden" type="file" accept=".json,application/json">
+      <button id="save-map" class="button button-muted" type="button"><span aria-hidden="true">●</span> Salvar</button>
+      <button id="export-map" class="button button-primary" type="button"><span aria-hidden="true">↓</span> Exportar mapa</button>
+    </div>
+  </header>
+
+  <main class="editor-shell">
+    <aside class="tool-panel" aria-label="Ferramentas do editor">
+      <div class="panel-section project-section">
+        <p class="eyebrow">PROJETO</p>
+        <label class="field-label" for="map-title">Nome do mapa</label>
+        <input id="map-title" class="text-input" type="text" maxlength="40" value="Meu parque">
+        <div class="dimension-fields">
+          <label><span class="field-label">Largura</span><input id="map-width" class="number-input" type="number" min="8" max="80" value="24"></label>
+          <label><span class="field-label">Altura</span><input id="map-height" class="number-input" type="number" min="8" max="60" value="16"></label>
+        </div>
+        <button id="resize-map" class="button button-outline full-button" type="button">Aplicar tamanho</button>
+      </div>
+
+      <div class="panel-section materials-section">
+        <p class="eyebrow">MATERIAIS</p>
+        <div class="material-list" role="group" aria-label="Escolher material">
+          <button class="material-option is-selected" type="button" data-material="grass" aria-pressed="true"><span class="swatch grass"></span><span>Grama</span><kbd>1</kbd></button>
+          <button class="material-option" type="button" data-material="sand" aria-pressed="false"><span class="swatch sand"></span><span>Areia</span><kbd>2</kbd></button>
+          <button class="material-option" type="button" data-material="wood" aria-pressed="false"><span class="swatch wood"></span><span>Madeira</span><kbd>3</kbd></button>
+          <button class="material-option" type="button" data-material="stone" aria-pressed="false"><span class="swatch stone"></span><span>Bloco Cinza</span><kbd>4</kbd></button>
+          <button class="material-option" type="button" data-material="visitor" aria-pressed="false"><span class="visitor-swatch" aria-hidden="true"></span><span>Visitante</span><kbd>V</kbd></button>
+          <button class="material-option eraser-option" type="button" data-material="erase" aria-pressed="false"><span class="eraser-mark">×</span><span>Apagar</span><kbd>E</kbd></button>
+        </div>
+      </div>
+
+      <div class="panel-bottom">
+        <div class="tip-line"><span aria-hidden="true">↖</span><span>Clique para pintar ou posicionar</span></div>
+        <a class="back-link" href="index.html"><span aria-hidden="true">←</span> Voltar ao carregador</a>
+      </div>
+    </aside>
+
+    <section class="workspace" aria-label="Área de edição do mapa">
+      <div class="workspace-toolbar">
+        <div><p class="eyebrow">ÁREA DE TRABALHO</p><h1 id="workspace-title">Meu parque</h1></div>
+        <div class="canvas-meta"><span id="canvas-dimensions">24 × 16</span><span class="meta-divider"></span><span><i class="live-dot"></i> <span id="tile-count">384 blocos</span></span></div>
+      </div>
+      <div class="canvas-frame">
+        <div class="canvas-scroll"><canvas id="map-canvas" aria-label="Grade do editor de mapas" tabindex="0"></canvas></div>
+      </div>
+      <div class="workspace-footer"><span id="editor-status" role="status">Pronto para criar.</span><span>ATALHOS: 1–4 MATERIAIS · V VISITANTE · E APAGAR</span></div>
+    </section>
+  </main>
+</body>
+</html>
