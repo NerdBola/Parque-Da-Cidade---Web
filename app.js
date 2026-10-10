@@ -112,14 +112,21 @@
     reader.readAsText(file);
   }
 
-  function downloadMap(map) {
-    const blob = new Blob([JSON.stringify(map, null, 2)], { type: 'application/json' });
+  function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `${map.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'mapa'}.json`;
+    anchor.download = filename;
+    anchor.hidden = true;
+    document.body.append(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadMap(map) {
+    const blob = new Blob([JSON.stringify(map, null, 2)], { type: 'application/json' });
+    downloadBlob(blob, `${map.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'mapa'}.json`);
   }
 
   function attachImport(input, callback) {
@@ -199,7 +206,11 @@
       frame += 1;
       if (direction) {
         moveVisitor(direction);
-        if (recording && !replaying) recording.inputs.push({ frame, direction });
+        if (recording && !replaying) {
+          recording.inputs.push({ frame, direction });
+          const inputCount = recording.inputs.length;
+          tasStatus.textContent = `Gravando .tap · ${inputCount} ${inputCount === 1 ? 'movimento' : 'movimentos'}.`;
+        }
       }
       paintMap(canvas.getContext('2d'), map);
       count.textContent = describeMapContents(map);
@@ -232,12 +243,7 @@
 
     const downloadTap = tap => {
       const blob = new Blob([JSON.stringify(tap, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `${tap.map.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'replay'}.tap`;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `${tap.map.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'replay'}.tap`);
     };
 
     const updateExportButton = () => { document.querySelector('#export-tap').disabled = !lastTap; };
